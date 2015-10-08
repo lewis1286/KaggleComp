@@ -1,0 +1,54 @@
+---
+title: "Kaggle_EDA"
+output: html_document
+---
+
+
+
+##a)
+
+Load the training_target.csv file into a data frame in R using the read.csv command (Tip: you can type ?read.csv at the R console to obtain help information about this function). Every row in this data frame corresponds to an ALS (amyotrophic lateral sclerosis) patient in twelve-month clinical trial, identified by a unique subject ID.
+
+
+```{r}
+t_feat = read.csv('../training_features.csv')
+t_targ = read.csv('../training_target.csv')
+v_feat = read.csv('../validation_features.csv')
+v_targ = read.csv('../validation_target.csv')
+```
+
+
+Set na values to the medians of that predictor:
+```{r}
+t_feat <- as.data.frame(lapply(t_feat, function(x) {x[is.na(x)] <- median(x, na.rm=TRUE); x}))
+```
+
+Question: How many patients are in this data frame?
+```{r}
+dim(t_targ)[1] 
+```
+
+```{r}
+summary(t_targ)
+```
+
+
+Question: How many feature columns are in this data frame?
+```{r}
+dim(t_feat)[2]
+```
+
+Write code to find the number of NA values in each column, and plot a histogram of these NA counts.
+
+```{r}
+num.nas <- function(x) sum(is.na(x))
+NAs <- apply(t_feat, 1, num.nas)
+hist(NAs, breaks = seq(0, length(NAs), 30))
+```
+
+
+```{r}
+
+```
+
+

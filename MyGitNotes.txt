@@ -1,0 +1,71 @@
+actions:
+
+######################### local machine #################################33
+git init # creates git repository on local machine ( in whatever folder you are working in)
+		 # stores a .git file with all versions of files in it (changelog etc)
+		 # if intent is to sync with github repository, don't use this step; initiate 
+		 # repository on github, and [git clone] repository
+
+
+git status  # gets status of repository what branch you are on, and what files are being tracked
+
+
+git add FILENAME.EXT # adds file to git repository (or updates if file is already there)
+git add .            # add all file updates to repository (do add before commit)
+git add *html 		 # add all files ending with 'html' 
+
+
+git commit  		  # commit all changes to repository (.git stuff)
+					  # will need to add a message of changes here
+git commit -m 'MESSAGE' # allows to put message inline instead of opening a text editor
+
+git log # prints out changes to the repository
+
+
+# bonus
+.gitignore # if you create this file, put things like *.txt for git to ignore any file ending txt
+###############################################################
+
+
+
+###################### branching ##############################
+
+# basic protocol is to checkout to a "newBranch" (from "master" branch), 
+# do changes to the files, git add, git commit
+# then git checkout master, git merge 
+
+git checkout -b (branch name) # checks out to new branch (branch name)
+
+git merge "newbranch" # do when done editing "newbranch" and have checkout out "master" branch
+
+git branch # tells what branch we are on
+
+################################################################
+
+git stash # holds changes on separate branch
+
+
+git diff # shows differences b/t two directories
+
+
+################## remote repositories ######################### 
+
+
+git remote # list remote repository (origin = from, upstream = to)
+git remote -v # list urls for remote repository
+
+git clone (url) #copies repository with from web to personal computer
+
+git fetch origin #bring any changes made on remote repository into personal directory
+# git history (will not change local files, run [git merge] to do that)
+
+git pull origin # fetches and merges in one step
+
+
+git push origin master #when local changes are ready to be pushed to remote [origin] repository.
+ # be sure that local changes have been git commited first.. 
+
+
+git remote add <reponame> <url> # adds new repo to current directory (advanced, 2 repositories)
+
+
