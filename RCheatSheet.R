@@ -14,7 +14,7 @@ data(<dataset>) #Loads dataset from loaded libraries
 t_feat2 <- t_feat[t_feat$subject.id!=525450,] # slice a row out of a dataframe by value
 simple.lm <- rbind(simple.lm, multi.est) # concatenate two df's by rows
 t_feat <- as.data.frame(lapply(t_feat, function(x) {x[is.na(x)] <- median(x, na.rm=TRUE); x})) # set na's to their column median values
-
+sample(10,20,replace = T) #sample in the range 1:10, 20 times, with replacement (returns vector)
 
 
 ################################               PCA:                      ####################
@@ -46,6 +46,11 @@ predict(...) function for predictions
 ##################### logistic regression 
 
 glm( ... , family = binomial)
+
+
+
+
+
 
 # na.vector.and.median.fill
 # this function takes in a datafram <dframe> copies all its vectors to 
