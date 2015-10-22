@@ -5,49 +5,76 @@ output: html_document
 
 
 
-##a)
-
-Load the training_target.csv file into a data frame in R using the read.csv command (Tip: you can type ?read.csv at the R console to obtain help information about this function). Every row in this data frame corresponds to an ALS (amyotrophic lateral sclerosis) patient in twelve-month clinical trial, identified by a unique subject ID.
+# 1) Load the data
 
 
 ```{r}
-t_feat = read.csv('../training_features.csv')
-t_targ = read.csv('../training_target.csv')
-v_feat = read.csv('../validation_features.csv')
-v_targ = read.csv('../validation_target.csv')
+# Change this to your data directory
+data.dir <- "~/Dropbox/classes/STATs 202 data mining and analysis/ALS-kaggle-comp/KaggleComp/"
+setwd(data.dir)
+# Read in each data files into a data frame
+training.target <- read.csv("../training_target.csv")
+training.features <- read.csv("../training_features.csv")
+validation.features <- read.csv("../validation_features.csv")
+validation.target <- read.csv("../validation_target.csv")
+leaderboard.features<- read.csv("../leaderboard_features.csv")
 ```
 
 
-Set na values to the medians of that predictor:
-```{r}
-t_feat <- as.data.frame(lapply(t_feat, function(x) {x[is.na(x)] <- median(x, na.rm=TRUE); x}))
-```
 
-Question: How many patients are in this data frame?
+# 2) Set na values to the medians of that predictor:
 ```{r}
-dim(t_targ)[1] 
-```
-
-```{r}
-summary(t_targ)
+t_feat <- as.data.frame(lapply(training.features, function(x) {x[is.na(x)] <- median(x, na.rm=TRUE); x}))
+v_feat <- as.data.frame(lapply(validation.features, function(x) {x[is.na(x)] <- median(x, na.rm=TRUE); x}))
 ```
 
 
-Question: How many feature columns are in this data frame?
+# 3) subset the data using lasso (taken from ISLR 6.6 lab2 p251)
+
 ```{r}
-dim(t_feat)[2]
+library(glmnet)
 ```
 
-Write code to find the number of NA values in each column, and plot a histogram of these NA counts.
-
 ```{r}
-num.nas <- function(x) sum(is.na(x))
-NAs <- apply(t_feat, 1, num.nas)
-hist(NAs, breaks = seq(0, length(NAs), 30))
+
+#massage data for the use of glmnet (needs matrix)
+train.frame <- data.frame(training.target$ALSFRS_slope, t_feat)
+colnames(train.frame)[1] <- "ALSFRS_slope"
+# train.frame[1:3,1:3]
+x = model.matrix(ALSFRS_slope~., train.frame)[,-1]
+y = train.frame$ALSFRS_slope
+
+#perform lasso regularization (alpha=1)
+grid = 10^seq(10,-2, length=100)
+lasso.mod <- glmnet(x , y, alpha=1, lambda = grid)
+# plot(lasso.mod) plotting doesn't work; too sparse
 ```
 
+```{r}
+#perform cross validation
+set.seed(1)
+cv.out <- cv.glmnet(x,y,alpha=1)
+plot(cv.out) # this takes about 3 minutes
+```
 
 ```{r}
+bestlam <- cv.out$lambda.min
+
+# build a test matrix to predict on:
+
+#---------------------------------------------------------------
+# something wrong with v_feat, its still got n'as.  maybe some columns
+# are only na?  can I just remove these colums, or should I go back and make
+# training and test datasets out of training.  ?  Recall validation is closer 
+# to what the actual test dataset will look like.
+#----------------------------------------------------------------
+test.frame <- data.frame(validation.target$ALSFRS_slope, v_feat)
+colnames(test.frame)[1] <- "ALSFRS_slope"
+x.test = model.matrix(ALSFRS_slope~., test.frame)[,-1]
+y.test = test.frame$ALSFRS_slope
+
+# Perform predictions
+lasso.pred <- predict(lasso.mod, s=bestlam, newx = x.test)
 
 ```
 
