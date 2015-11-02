@@ -80,3 +80,9 @@ lasso.pred <- predict(lasso.mod, s=bestlam, newx = x.test)
 ```
 
 
+--- per getting started ----
+We use **write.csv** function to write a CSV file in the contest format with the leaderboard subject predictions. 
+
+```{r}
+write.csv(leaderboard.predictions, file = "../leaderboard_predictions-training_mean.csv",row.names=FALSE)
+```
