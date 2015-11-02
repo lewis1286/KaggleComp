@@ -1,3 +1,13 @@
+quick procedure for git and this project:
+
+git pull origin
+-- edit files here --
+git add .
+git commit -m 'describe changes'
+git push origin master
+
+
+
 actions:
 
 ######################### local machine #################################33
