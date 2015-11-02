@@ -9,9 +9,8 @@ output: html_document
 
 
 ```{r}
-# Change this to your data directory
-data.dir <- "~/Dropbox/classes/STATs 202 data mining and analysis/ALS-kaggle-comp/KaggleComp/"
-setwd(data.dir)
+
+
 # Read in each data files into a data frame
 training.target <- read.csv("../training_target.csv")
 training.features <- read.csv("../training_features.csv")
