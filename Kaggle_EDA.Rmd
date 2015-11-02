@@ -3,6 +3,7 @@ title: "Kaggle_EDA"
 output: html_document
 ---
 
+hello world
 
 
 # 1) Load the data
