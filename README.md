@@ -1,10 +1,10 @@
 # KaggleComp
 Repository for the STATS202 Kaggle Competition
 
-This repository has two main files:
+There are different .Rmd files here for different models.
 
-Kaggle_EDA.Rmd
-This file will be the main data analysis for the competition.  All processing should be done here
+Lasso_Method.Rmd
+creates a model using the lasso method for reducing dimensions
 
 RCheatSheet.R
 A living list of useful commands for using R.  

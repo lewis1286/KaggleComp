@@ -1,0 +1,8 @@
+---
+title: "PCR"
+author: "Lewis Guignard"
+date: "November 3, 2015"
+output: pdf_document
+---
+
+Goal is to predict using PCRegression.  Maybe use lasso to find a best subset and then PCRegression and see how that goes.. see ISLR p.256

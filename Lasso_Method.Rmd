@@ -1,9 +1,14 @@
 ---
-title: "Kaggle_EDA"
+title: "Lasso Method"
 output: html_document
 ---
 
 
+This file makes predictions on leaderboard features using the lasso method of dimension reduction.
+
+Possible routes to try: 
+  remove datapoints that have na's instead of making them = the median of that vector.
+  try with ridge regression and see who performs better.
 
 # 1) Load the data
 For part 1, we are supposed to train on training and validation, then test on leaderboard.
@@ -73,13 +78,8 @@ cv.out <- cv.glmnet(x,y,alpha=1)
 bestlam <- cv.out$lambda.min
 ```
 
-make a model with best predictor lambda
 
-```{r}
-# lasso.mod <- glmnet(x , y, alpha=1, lambda = bestlam)
-```
-
-do prediction on validation.features:
+lets do a prediction on validation.features as a sanity check:
 ```{r}
 ALSFRS_slope <- rep(0, dim(v_feat)[1])
 temp.test <- data.frame(ALSFRS_slope, v_feat)
@@ -95,21 +95,26 @@ avg
 MSE <- mean(( validation.target$ALSFRS_slope - lasso.pred )^2)
 MSE
 ```
-.. so our lasso prediction is beating the mean at least on validation.target.  
 
+.. so our lasso prediction is beating the mean at least on validation.target.  
 lets do a prediction on leaderboard.features:
+
 ```{r}
 ALSFRS_slope <- rep(0, dim(l_feat)[1])
 temp.test <- data.frame(ALSFRS_slope, l_feat)
 x.test <- model.matrix(temp.test$ALSFRS_slope~.,temp.test)[,-1]
 # Perform predictions
 leaderboard.lasso.pred <- predict(lasso.mod, s=bestlam, newx = x.test)
+
+# get into format for submission
+leaderboard.predictions <- data.frame(leaderboard.features$subject.id, leaderboard.lasso.pred)
+names(leaderboard.predictions) = c("subject.id", "ALSFRS_slope")
 ```
 
 
---- per getting started ----
+Submission file:
 We use **write.csv** function to write a CSV file in the contest format with the leaderboard subject predictions. 
 
 ```{r}
-write.csv(leaderboard.lasso.pred, file = "../leaderboard_predictions.csv",row.names=FALSE)
+write.csv(leaderboard.predictions, file = "../leaderboard_predictions.csv",row.names=FALSE)
 ```
