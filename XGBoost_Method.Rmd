@@ -1,0 +1,94 @@
+---
+title: "XGBoost_method"
+author: "Lewis Guignard"
+date: "November 3, 2015"
+output: html_document
+---
+
+
+FYI, XGBoost wins most regression Kaggle competitions
+
+# 1) Load the data
+For part 1, we are supposed to train on training and validation, then test on leaderboard.
+
+```{r}
+
+
+# Read in each data files into a data frame
+training.target <- read.csv("../training_target.csv")
+training.features <- read.csv("../training_features.csv")
+validation.features <- read.csv("../validation_features.csv")
+validation.target <- read.csv("../validation_target.csv")
+leaderboard.features<- read.csv("../leaderboard_features.csv")
+```
+
+
+
+# 2) Set na values to the medians of that predictor:
+We must remove some features: validation.features and leaderboard.features have many indicators that are all NA values.  We first set the NA values to the median of that column for the rest of the predictors.  Then we find the columns that are all NA, and remove them completely from training.features, validation.features, leaderboard.features.  
+
+```{r}
+# set NA's to medians for columns that have at least some data
+t_feat <- as.data.frame(lapply(training.features, function(x) {x[is.na(x)] <- median(x, na.rm=TRUE); x}))
+v_feat <- as.data.frame(lapply(validation.features, function(x) {x[is.na(x)] <- median(x, na.rm=TRUE); x}))
+l_feat <- as.data.frame(lapply(leaderboard.features, function(x) {x[is.na(x)] <- median(x, na.rm=TRUE); x}))
+
+# find out which columns in v_feat are all NA, and remove these columns from t_feat, v_feat, l_feat
+col.has.na <- apply(l_feat, 2, function(x){any(is.na(x))}) # logical of which columns are NA
+t_feat <- t_feat[,!col.has.na]
+v_feat <- v_feat[,!col.has.na]
+l_feat <- l_feat[,!col.has.na]
+
+# lets merge t_feat and v_feat for a training set
+train.predictors <- rbind(t_feat, v_feat)
+train.target <- rbind(training.target, validation.target)
+train.frame <- data.frame(train.target, train.predictors)
+train.frame <- train.frame[,-3] # subject id got copied in 2x, remove one of them
+
+```
+
+
+# 3) 
+
+Most of this train / test is modified from:
+
+https://github.com/dmlc/xgboost/blob/master/R-package/demo/basic_walkthrough.R
+https://github.com/dmlc/xgboost/blob/master/R-package/R/xgboost.R
+
+```{r}
+require(xgboost)
+# get rid of subject id, retaining ordering
+train.target<-train.target$ALSFRS_slope
+train.predictors<-train.predictors[,-1]
+test.data <- l_feat[,-1]
+
+```
+
+Train using XGBoost (I have no clue what these settings are)
+```{r}
+
+bst <- xgboost(data = as.matrix(train.predictors), label = train.target, max.depth = 2, eta = 1, nthread = 2, nround = 2, objective = "reg:linear")
+```
+
+Prediction:
+```{r}
+#--------------------basic prediction using xgboost--------------
+# you can do prediction using the following line
+# you can put in Matrix, sparseMatrix, or xgb.DMatrix 
+pred <- predict(bst, as.matrix(test.data))
+```
+
+
+```{r}
+# get into format for submission
+leaderboard.predictions <- data.frame(leaderboard.features$subject.id, pred)
+names(leaderboard.predictions) = c("subject.id", "ALSFRS_slope")
+```
+
+
+Submission file:
+We use **write.csv** function to write a CSV file in the contest format with the leaderboard subject predictions. 
+
+```{r}
+write.csv(leaderboard.predictions, file = "../xgb_leaderboard_predictions.csv",row.names=FALSE)
+```
