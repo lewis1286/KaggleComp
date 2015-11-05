@@ -12,7 +12,7 @@ FYI, XGBoost wins most regression Kaggle competitions
 For part 1, we are supposed to train on training and validation, then test on leaderboard.
 
 ```{r}
-
+rm(list=ls())
 
 # Read in each data files into a data frame
 training.target <- read.csv("../training_target.csv")
@@ -24,7 +24,7 @@ leaderboard.features<- read.csv("../leaderboard_features.csv")
 
 
 
-# 2) Set na values to the medians of that predictor:
+# 2) Set na values to the medians of that predictor, get data into usable form:
 We must remove some features: validation.features and leaderboard.features have many indicators that are all NA values.  We first set the NA values to the median of that column for the rest of the predictors.  Then we find the columns that are all NA, and remove them completely from training.features, validation.features, leaderboard.features.  
 
 ```{r}
@@ -57,27 +57,39 @@ https://github.com/dmlc/xgboost/blob/master/R-package/R/xgboost.R
 
 ```{r}
 require(xgboost)
-# get rid of subject id, retaining ordering
+require(boot)
+# get rid of subject id while retaining ordering
 train.target<-train.target$ALSFRS_slope
 train.predictors<-train.predictors[,-1]
-test.data <- l_feat[,-1]
+test.data <- v_feat[,-1] #l_feat[,-1]  # use l_feat[,-1] when you want to build a prediction for submission.
 
 ```
 
 Train using XGBoost (I have no clue what these settings are)
 ```{r}
 
-bst <- xgboost(data = as.matrix(train.predictors), label = train.target, max.depth = 2, eta = 1, nthread = 2, nround = 2, objective = "reg:linear")
+bst <- xgboost(data = as.matrix(train.predictors), label = train.target, max.depth = 3, eta = .8, nthread = 2, nround = 2, objective = "reg:linear")
 ```
 
 Prediction:
 ```{r}
-#--------------------basic prediction using xgboost--------------
-# you can do prediction using the following line
 # you can put in Matrix, sparseMatrix, or xgb.DMatrix 
 pred <- predict(bst, as.matrix(test.data))
+mean(( pred - validation.target$ALSFRS_slope)^2)
 ```
 
+
+Run bootstrap on mean to see how it holds up to variations in the dataset.
+
+```{r}
+boot.fn = function(df, index){
+  bst <- xgboost(data = as.matrix(df[index,]), label = train.target[index], max.depth = 2, eta = .9, nthread = 3, nround = 3, objective = "reg:linear")
+  pred <- predict(bst, as.matrix(test.data))
+  return(mean((pred - validation.target$ALSFRS_slope) ^2) )
+}
+boot(train.predictors, boot.fn, 50)
+# boot.fn(train.predictors, sample(1500,1500, replace = TRUE))
+```
 
 ```{r}
 # get into format for submission

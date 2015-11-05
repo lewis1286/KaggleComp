@@ -14,7 +14,7 @@ Possible routes to try:
 For part 1, we are supposed to train on training and validation, then test on leaderboard.
 
 ```{r}
-
+rm(list=ls())
 
 # Read in each data files into a data frame
 training.target <- read.csv("../training_target.csv")
@@ -73,8 +73,7 @@ perform cross validation to find best choice of lambda
 
 ```{r}
 set.seed(1)
-cv.out <- cv.glmnet(x,y,alpha=1)
-# plot(cv.out) # this takes about 3 minutes
+cv.out <- cv.glmnet(x,y,alpha=1) # this takes about 3 minutes
 bestlam <- cv.out$lambda.min
 ```
 
@@ -118,3 +117,11 @@ We use **write.csv** function to write a CSV file in the contest format with the
 ```{r}
 write.csv(leaderboard.predictions, file = "../leaderboard_predictions.csv",row.names=FALSE)
 ```
+
+
+```{r}
+xgb = read.csv('../xgb_leaderboard_predictions.csv')
+mean((leaderboard.predictions$ALSFRS_slope - xgb$ALSFRS_slope)^2)
+
+```
+
