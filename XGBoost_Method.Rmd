@@ -76,6 +76,7 @@ Prediction:
 # you can put in Matrix, sparseMatrix, or xgb.DMatrix 
 pred <- predict(bst, as.matrix(test.data))
 mean(( pred - validation.target$ALSFRS_slope)^2)
+#This result uses a test set included in the training set.
 ```
 
 
