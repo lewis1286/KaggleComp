@@ -1,0 +1,144 @@
+---
+title: "Lasso Method"
+output: html_document
+---
+
+
+This file makes predictions on leaderboard features using the lasso method of dimension reduction.
+
+Possible routes to try: 
+  remove datapoints that have na's instead of making them = the median of that vector.
+  try with ridge regression and see who performs better.
+
+# 1) Load the data
+For part 1, we are supposed to train on training and validation, then test on leaderboard.
+
+```{r}
+rm(list=ls())
+
+# Read in each data files into a data frame
+training.target <- read.csv("../training_target.csv")
+training.features <- read.csv("../training_features.csv")
+validation.features <- read.csv("../validation_features.csv")
+validation.target <- read.csv("../validation_target.csv")
+leaderboard.features <- read.csv("../leaderboard_features.csv")
+```
+
+
+#2) Isolate the predictors that have low enough NAs
+```{r}
+ratio = 0.5
+
+all.patients = rbind(training.features, validation.features,leaderboard.features)
+
+hist.all.patients = colSums(is.na(all.patients))
+
+all.patients.size = nrow(all.patients)
+
+good.features=NULL
+
+for (nam in names(all.patients)){
+  if (hist.all.patients[nam]<all.patients.size*ratio){
+    good.features = c(good.features,nam)
+  }
+}
+
+good.features
+
+training.features = training.features[,good.features]
+validation.features = validation.features[,good.features]
+leaderboard.features = leaderboard.features[,good.features]
+```
+
+
+
+
+
+
+# 3) Set na values to the medians of that predictor:
+We must remove some features: validation.features and leaderboard.features have many indicators that are all NA values.  We first set the NA values to the median of that column for the rest of the predictors.  Then we find the columns that are all NA, and remove them completely from training.features, validation.features, leaderboard.features.  
+
+```{r}
+# set NA's to medians for columns that have at least some data
+t_feat <- as.data.frame(lapply(training.features, function(x) {x[is.na(x)] <- median(x, na.rm=TRUE); x}))
+v_feat <- as.data.frame(lapply(validation.features, function(x) {x[is.na(x)] <- median(x, na.rm=TRUE); x}))
+l_feat <- as.data.frame(lapply(leaderboard.features, function(x) {x[is.na(x)] <- median(x, na.rm=TRUE); x}))
+
+# lets merge t_feat and v_feat for a training set
+train.predictors <- rbind(t_feat, v_feat)
+train.target <- rbind(training.target, validation.target)
+train.frame <- data.frame(train.target, train.predictors)
+train.frame <- train.frame[,-3] # subject id got copied in 2x, remove one of them
+
+```
+
+
+# 4) subset the data using lasso (taken from ISLR 6.6 lab2 p251)
+
+```{r}
+library(glmnet)
+```
+
+Create Lasso model
+
+```{r}
+
+#massage data for the use of glmnet (needs matrix)
+x = model.matrix(ALSFRS_slope~., train.frame)[,-1]
+y = train.frame$ALSFRS_slope
+
+#perform lasso regularization (alpha=1)
+grid = 10^seq(10,-2, length=100)
+lasso.mod <- glmnet(x , y, alpha=1, lambda = grid)
+```
+
+perform cross validation to find best choice of lambda
+
+```{r}
+set.seed(1)
+cv.out <- cv.glmnet(x,y,alpha=1) # this takes about 3 minutes
+bestlam <- cv.out$lambda.min
+```
+
+
+lets do a prediction on validation.features as a sanity check:
+```{r}
+ALSFRS_slope <- rep(0, dim(v_feat)[1])
+temp.test <- data.frame(ALSFRS_slope, v_feat)
+x.test <- model.matrix(temp.test$ALSFRS_slope~.,temp.test)[,-1]
+# Perform predictions
+lasso.pred <- predict(lasso.mod, s=bestlam, newx = x.test)
+```
+
+check results against validation.target
+```{r}
+avg <- mean(( mean(validation.target$ALSFRS_slope) - validation.target$ALSFRS_slope)^2)
+avg
+MSE <- mean(( validation.target$ALSFRS_slope - lasso.pred )^2)
+MSE
+```
+
+.. so our lasso prediction is beating the mean at least on validation.target.  
+lets do a prediction on leaderboard.features:
+
+```{r}
+ALSFRS_slope <- rep(0, dim(l_feat)[1])
+temp.test <- data.frame(ALSFRS_slope, l_feat)
+x.test <- model.matrix(temp.test$ALSFRS_slope~.,temp.test)[,-1]
+# Perform predictions
+leaderboard.lasso.pred <- predict(lasso.mod, s=bestlam, newx = x.test)
+
+# get into format for submission
+leaderboard.predictions <- data.frame(leaderboard.features$subject.id, leaderboard.lasso.pred)
+names(leaderboard.predictions) = c("subject.id", "ALSFRS_slope")
+```
+
+
+Submission file:
+We use **write.csv** function to write a CSV file in the contest format with the leaderboard subject predictions. 
+
+```{r}
+write.csv(leaderboard.predictions, file = "../leaderboard_predictions.csv",row.names=FALSE)
+```
+
+
