@@ -1,0 +1,53 @@
+---
+title: "playground"
+author: "Lewis Guignard"
+date: "November 6, 2015"
+output: pdf_document
+---
+
+```{r}
+rm(list=ls())
+require(xgboost)
+require(boot)
+# Read in each data files into a data frame
+training.target <- read.csv("../training_target.csv")
+training.features <- read.csv("../training_features.csv")
+validation.features <- read.csv("../validation_features.csv")
+validation.target <- read.csv("../validation_target.csv")
+leaderboard.features<- read.csv("../leaderboard_features.csv")
+```
+
+Running CV on proper NA ratio
+```{r}
+
+for (i in seq(.2,.8, .1)){
+  ratio = i
+  npred = nrow(training.features)
+  
+  na.count <- apply(training.features,2,function(x){sum(is.na(x)) < ratio*npred})
+  
+  t_feat = training.features[,na.count]
+  v_feat = validation.features[,na.count]
+  l_feat = leaderboard.features[,na.count]
+
+    # set NA's to medians for columns that have at least some data
+  t_feat <- as.data.frame(lapply(t_feat, function(x) {x[is.na(x)] <- median(x, na.rm=TRUE); x}))
+  v_feat <- as.data.frame(lapply(v_feat, function(x) {x[is.na(x)] <- median(x, na.rm=TRUE); x}))
+  l_feat <- as.data.frame(lapply(l_feat, function(x) {x[is.na(x)] <- median(x, na.rm=TRUE); x}))
+  
+  # lets merge t_feat and v_feat for a training set
+  train.predictors <- rbind(t_feat, v_feat)
+  train.target <- rbind(train.target, validation.target)
+  # train.frame <- data.frame(train.target, train.predictors)
+  # train.frame <- train.frame[,-3] # subject id got copied in 2x, remove one of them
+  
+  train.predictors <- train.predictors[,-1]
+  train.target <- train.target[,-1]
+  # Train using XGBoost (I have no clue what these settings are)
+  bst <- xgb.cv(data = as.matrix(train.predictors), label = train.target, max.depth = 3, eta = .8, nthread = 2, nround = 2, objective = "reg:linear", nfold = 10)
+  
+
+  
+}
+```
+
