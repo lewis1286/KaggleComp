@@ -43,8 +43,6 @@ for (nam in names(all.patients)){
   }
 }
 
-good.features
-
 training.features = training.features[,good.features]
 validation.features = validation.features[,good.features]
 leaderboard.features = leaderboard.features[,good.features]
@@ -69,6 +67,11 @@ train.predictors <- rbind(t_feat, v_feat)
 train.target <- rbind(training.target, validation.target)
 train.frame <- data.frame(train.target, train.predictors)
 train.frame <- train.frame[,-3] # subject id got copied in 2x, remove one of them
+
+#sample = sample(nrow(train.frame),2000)
+#train.frame2 = train.frame[sample,]
+#test.frame = train.frame[-sample,]
+#train.frame = train.frame2
 
 ```
 
