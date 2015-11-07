@@ -24,20 +24,27 @@ leaderboard.features<- read.csv("../leaderboard_features.csv")
 
 
 
-# 2) Set na values to the medians of that predictor, get data into usable form:
+# 2) Handling NAs
 We must remove some features: validation.features and leaderboard.features have many indicators that are all NA values.  We first set the NA values to the median of that column for the rest of the predictors.  Then we find the columns that are all NA, and remove them completely from training.features, validation.features, leaderboard.features.  
 
+Subset features (predictors)
 ```{r}
+
+for (i in seq(.2,.8, .1)){
+  
+
+ratio = .5
+npred = nrow(training.features)
+na.count <- apply(training.features,2,function(x){sum(is.na(x)) < ratio*npred})
+
+t_feat = training.features[,na.count]
+v_feat = validation.features[,na.count]
+l_feat = leaderboard.features[,na.count]
+
 # set NA's to medians for columns that have at least some data
 t_feat <- as.data.frame(lapply(training.features, function(x) {x[is.na(x)] <- median(x, na.rm=TRUE); x}))
 v_feat <- as.data.frame(lapply(validation.features, function(x) {x[is.na(x)] <- median(x, na.rm=TRUE); x}))
 l_feat <- as.data.frame(lapply(leaderboard.features, function(x) {x[is.na(x)] <- median(x, na.rm=TRUE); x}))
-
-# find out which columns in v_feat are all NA, and remove these columns from t_feat, v_feat, l_feat
-col.has.na <- apply(l_feat, 2, function(x){any(is.na(x))}) # logical of which columns are NA
-t_feat <- t_feat[,!col.has.na]
-v_feat <- v_feat[,!col.has.na]
-l_feat <- l_feat[,!col.has.na]
 
 # lets merge t_feat and v_feat for a training set
 train.predictors <- rbind(t_feat, v_feat)

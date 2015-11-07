@@ -19,35 +19,37 @@ leaderboard.features<- read.csv("../leaderboard_features.csv")
 
 Running CV on proper NA ratio
 ```{r}
+npred = nrow(training.features)
+cv.test.error.mean = NULL
+ratio.range = seq(.2,.8,.1)
 
-for (i in seq(.2,.8, .1)){
-  ratio = i
-  npred = nrow(training.features)
-  
+for (ratio in ratio.range){
+  # remove predictors with more than <ratio> na's
   na.count <- apply(training.features,2,function(x){sum(is.na(x)) < ratio*npred})
   
   t_feat = training.features[,na.count]
   v_feat = validation.features[,na.count]
   l_feat = leaderboard.features[,na.count]
 
-    # set NA's to medians for columns that have at least some data
+    # set NA's to medians for remaining data
   t_feat <- as.data.frame(lapply(t_feat, function(x) {x[is.na(x)] <- median(x, na.rm=TRUE); x}))
   v_feat <- as.data.frame(lapply(v_feat, function(x) {x[is.na(x)] <- median(x, na.rm=TRUE); x}))
   l_feat <- as.data.frame(lapply(l_feat, function(x) {x[is.na(x)] <- median(x, na.rm=TRUE); x}))
   
   # lets merge t_feat and v_feat for a training set
   train.predictors <- rbind(t_feat, v_feat)
-  train.target <- rbind(train.target, validation.target)
+  train.target <- rbind(training.target, validation.target)
   # train.frame <- data.frame(train.target, train.predictors)
   # train.frame <- train.frame[,-3] # subject id got copied in 2x, remove one of them
   
+  # remove subject id's
   train.predictors <- train.predictors[,-1]
   train.target <- train.target[,-1]
-  # Train using XGBoost (I have no clue what these settings are)
-  bst <- xgb.cv(data = as.matrix(train.predictors), label = train.target, max.depth = 3, eta = .8, nthread = 2, nround = 2, objective = "reg:linear", nfold = 10)
+  # CV using XGBoost (I have no clue what these settings are)
+  bst <- xgb.cv(data = as.matrix(train.predictors), label = train.target, max.depth = 3, eta = .8, nthread = 2, nround = 4, objective = "reg:linear", nfold = 10)
   
-
-  
+  cv.test.error.mean <- c(cv.test.error.mean, bst$test.rmse.mean[1])
 }
+plot(ratio.range, cv.test.error.mean)
 ```
 
