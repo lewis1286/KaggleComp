@@ -2,13 +2,14 @@
 title: "playground"
 author: "Lewis Guignard"
 date: "November 6, 2015"
-output: pdf_document
+output: html_document
 ---
 
 ```{r}
 rm(list=ls())
 require(xgboost)
 require(boot)
+set.seed(1)
 # Read in each data files into a data frame
 training.target <- read.csv("../training_target.csv")
 training.features <- read.csv("../training_features.csv")
@@ -21,7 +22,7 @@ Running CV on proper NA ratio
 ```{r}
 npred = nrow(training.features)
 cv.test.error.mean = NULL
-ratio.range = seq(.2,.8,.1)
+ratio.range = seq(.02,.98,.02)
 
 for (ratio in ratio.range){
   # remove predictors with more than <ratio> na's
